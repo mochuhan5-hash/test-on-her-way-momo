@@ -2,10 +2,42 @@ import React, { useEffect, useRef } from 'react';
 
 interface LandingViewProps {
   onStart: () => void;
+  onStartOnboarding?: () => void;
+  onNeedAuth?: () => void; // Called when user needs to login/register
+  userId?: string;
+  isLoggedIn?: boolean;
 }
 
-export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onStart, onStartOnboarding, onNeedAuth, userId, isLoggedIn = false }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+
+  // Check if user has profile in localStorage (user-specific)
+  const hasProfile = (): boolean => {
+    if (!userId) return false;
+    try {
+      return !!localStorage.getItem(`publicProfile_${userId}`);
+    } catch {
+      return false;
+    }
+  };
+
+  const handleStartClick = () => {
+    if (!isLoggedIn) {
+      // Not logged in: go to registration/login
+      if (onNeedAuth) {
+        onNeedAuth();
+      }
+    } else if (hasProfile()) {
+      // Logged in with profile: go directly to MY_MAP
+      onStart();
+    } else if (onStartOnboarding) {
+      // Logged in without profile: go to onboarding
+      onStartOnboarding();
+    } else {
+      // Fallback: go to MY_MAP
+      onStart();
+    }
+  };
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -281,7 +313,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onStart }) => {
         </div>
 
         <div className="pt-6">
-          <button onClick={onStart} className="group relative px-10 py-3.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105">
+          <button onClick={handleStartClick} className="group relative px-10 py-3.5 rounded-full overflow-hidden transition-all duration-300 hover:scale-105">
             <div className="absolute inset-0 bg-white/10 backdrop-blur-md border border-white/20 group-hover:bg-white/20 transition-all"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-nebula-purple/30 to-nebula-pink/30 opacity-0 group-hover:opacity-100 transition-opacity blur-md"></div>
 
